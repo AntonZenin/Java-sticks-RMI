@@ -16,7 +16,7 @@ public class Client {
         Registry registry = LocateRegistry.getRegistry(host, port);
         StickGame game = (StickGame) registry.lookup("StickGame");
 
-        System.out.println("Ввведите имя: ");
+        System.out.println("Введите имя: ");
         String name = in.nextLine().trim();
         int me = game.join(name);
         if (me == -1) {
