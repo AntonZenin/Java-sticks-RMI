@@ -43,7 +43,7 @@ public class GameState implements Serializable {
         System.out.println();
         System.out.println("    ");
         for (int c = 0; c <= size; c++) {
-            System.out.printf("%-4d", c);
+            System.out.printf("%4d", c);
         }
         System.out.println();
 
