@@ -16,7 +16,7 @@ public class Client {
         Registry registry = LocateRegistry.getRegistry(host, port);
         StickGame game = (StickGame) registry.lookup("StickGame");
 
-        System.out.println("Введите имя: ");
+        System.out.print("Введите имя: ");
         String name = in.nextLine().trim();
         int me = game.join(name);
         if (me == -1) {
@@ -40,7 +40,7 @@ public class Client {
             }
 
             if (s.started && s.currentPlayer == me) {
-                System.out.println("Ваш ход: ");
+                System.out.print("Ваш ход: ");
                 String[] parts = in.nextLine().trim().split("\\s+");
                 if (parts.length != 3) {
                     System.out.println("Нужно ввести три значения, например: h 0 1");

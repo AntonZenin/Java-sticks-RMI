@@ -2,13 +2,14 @@ package ru.sticks.common;
 
 import java.io.Serializable;
 
+// Сервер передаёт этот объект клиенту по сети, поэтому класс реализует Serializable
 public class GameState implements Serializable {
     private static final long serialVersionUID = 1L;
 
     public int size;
     public boolean[][] hor;
     public boolean[][] ver;
-    public int[][] owner;
+    public int[][] owner;                               // кто закрыл клетку: 0 - никто, 1 или 2
     public String[] names = new String[3];
     public int[] score = new int[3];
     public int currentPlayer = 1;
@@ -48,6 +49,7 @@ public class GameState implements Serializable {
         System.out.println();
 
         for (int r = 0; r <= size; r++) {
+            // строка с точками и горизонтальными палочками
             System.out.printf("%3d ", r);
             for (int c = 0; c <= size; c++) {
                 System.out.print("+");
@@ -56,6 +58,7 @@ public class GameState implements Serializable {
                 }
             }
             System.out.println();
+            // строка с вертикальными палочками и владельцами клеток
             if (r < size) {
                 System.out.print("    ");
                 for (int c = 0; c <= size; c++) {

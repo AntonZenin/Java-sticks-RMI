@@ -6,6 +6,8 @@ import ru.sticks.common.StickGame;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 
+// UnicastRemoteObject для экспортирования объекта: RMI открывает сетевой порт и
+// начинает принимать для этого объекта вызовы от клиентов
 public class StickGameImpl extends UnicastRemoteObject implements StickGame {
 
     private final GameState state;
@@ -18,6 +20,8 @@ public class StickGameImpl extends UnicastRemoteObject implements StickGame {
         totalLines = 2 * size * (size + 1);
     }
 
+
+    // synchronized - пока один поток выполняет любой synchronized-метод этого объекта, остальные ждут
     @Override
     public synchronized int join(String name) throws RemoteException {
         if (state.names[1] == null) {
@@ -65,6 +69,8 @@ public class StickGameImpl extends UnicastRemoteObject implements StickGame {
         }
         linesDrawn++;
 
+
+        // Проверяем, не закрылись ли соседние клетки (у палочки не больше двух соседних клеток)
         int closed = 0;
         if (type == 'h') {
             closed += tryClose(row - 1, col, player);
@@ -96,10 +102,12 @@ public class StickGameImpl extends UnicastRemoteObject implements StickGame {
         return "OK";
     }
 
+
+    // Если клетка (r, c) существует, ещё не занята и все 4 её стороны нарисованы, отдаём её игроку
     private int tryClose(int r, int c, int player) {
         int n = state.size;
-        if (r < 0 || r >= n || c < 0 || c >= n) return 0;
-        if (state.owner[r][c] != 0) return 0;
+        if (r < 0 || r >= n || c < 0 || c >= n) return 0; // проверка что клетка не вышла за пределы
+        if (state.owner[r][c] != 0) return 0;             // клетку нельзя засчитать дважды
         boolean full = state.hor[r][c] && state.hor[r + 1][c]
                 && state.ver[r][c] && state.ver[r][c + 1];
         if (!full) return 0;
