@@ -3,9 +3,11 @@ package ru.sticks.client;
 import ru.sticks.common.GameState;
 import ru.sticks.common.StickGame;
 
+import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.Scanner;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Client {
     public static void main(String[] args) throws Exception {
@@ -27,23 +29,51 @@ public class Client {
         System.out.println("Формат хода: h строка столбец  - горизонтальная палочка вправо от точки");
         System.out.println("             v строка столбец  - вертикальная палочка вниз от точки");
 
+        AtomicBoolean running = new AtomicBoolean(true);
+        Object outputLock = new Object();
+
+        Thread inputThread = new Thread(() -> readMoves(in, game, me, running, outputLock));
+
+        inputThread.setDaemon(true);
+        inputThread.start();
+
         int lastVersion = -1;
-        while(true) {
-            GameState s = game.getState();
-
-            if (s.version != lastVersion) {
-                s.print();
-                lastVersion = s.version;
+        try {
+            while(running.get()) {
+                GameState s = game.getState();
+                if (s.version != lastVersion) {
+                    synchronized (outputLock) {
+                        s.print();
+                        if (s.started && !s.gameOver && s.currentPlayer == me) {
+                            System.out.println("Ваш ход:");
+                        }
+                    }
+                    lastVersion = s.version;
+                }
+                if (s.gameOver) {
+                    break;
+                }
+                Thread.sleep(200);
             }
-            if (s.gameOver) {
-                break;
-            }
+        } finally {
+            running.set(false);
+        }
 
-            if (s.started && s.currentPlayer == me) {
-                System.out.print("Ваш ход: ");
-                String[] parts = in.nextLine().trim().split("\\s+");
-                if (parts.length != 3) {
-                    System.out.println("Нужно ввести три значения, например: h 0 1");
+    }
+
+    private static void readMoves(Scanner in, StickGame game, int me,
+                                  AtomicBoolean running, Object outputLock) {
+        try {
+            while (running.get() && in.hasNextLine()) {
+                String line = in.nextLine().trim();
+                if (!running.get()) {
+                    break;
+                }
+                String[] parts = line.split("\\s+");
+                if (parts.length != 3 || parts[0].length() != 1) {
+                    synchronized (outputLock) {
+                        System.out.println("Нужно ввести три значения, например: h 0 1");
+                    }
                     continue;
                 }
                 try {
@@ -52,15 +82,22 @@ public class Client {
                     int col = Integer.parseInt(parts[2]);
                     String result = game.makeMove(me, type, row, col);
                     if (!result.equals("OK")) {
-                        System.out.println("Ошибка: " + result);
+                        synchronized (outputLock) {
+                            System.out.println("Ошибка: " + result);
+                        }
                     }
-
                 } catch (NumberFormatException e) {
-                    System.out.println("Строка и столбец должны быть числами");
+                    synchronized (outputLock) {
+                        System.out.println("Строка и столбец должны быть числами");
+                    }
                 }
-            } else {
-                Thread.sleep(1000);
             }
+        } catch (RemoteException e) {
+            synchronized (outputLock) {
+                System.out.println("Ошибка связи с сервером: " + e.getMessage());
+            }
+        } finally {
+            running.set(false);
         }
     }
 }
